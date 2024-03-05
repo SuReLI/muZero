@@ -22,3 +22,8 @@ Séance 2 : rédaction d'un pseudo-code générique pour un muZero tabulaire et 
 Séance 3 : travail en petits groupes sur les différentes tâches d'implémentation.  
 Séance 4 : suite de la séance 3 et assemblage du code.  
 Séance 5 : préparation de la restitution puis restitution.  
+
+## Références
+
+[1] Schrittwieser, J., Antonoglou, I., Hubert, T., Simonyan, K., Sifre, L., Schmitt, S., Guez, A., Lockhart, E., Hassabis, D., Graepel, T. and Lillicrap, T., 2020. Mastering atari, go, chess and shogi by planning with a learned model. Nature, 588(7839), pp.604-609.
+
