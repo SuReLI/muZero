@@ -27,3 +27,9 @@ Séance 5 : préparation de la restitution puis restitution.
 
 [1] Schrittwieser, J., Antonoglou, I., Hubert, T., Simonyan, K., Sifre, L., Schmitt, S., Guez, A., Lockhart, E., Hassabis, D., Graepel, T. and Lillicrap, T., 2020. Mastering atari, go, chess and shogi by planning with a learned model. Nature, 588(7839), pp.604-609.
 
+## Cool links
+
+https://www.furidamu.org/blog/2020/12/22/muzero-intuition/  
+https://jyopari.github.io/MCTS.html  
+
+
