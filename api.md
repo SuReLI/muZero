@@ -36,7 +36,7 @@
 - $s_t^k$ hidden state, predicted by $g_s$ from $s_t^{k-1}$ and $a_t^k$
 - $r_t^k$ predicted reward, predicted by $g_r$ from $s_t^{k-1}$ and $a_t^k$
 - $v_t^k$ predicted value, predicted by $f_v$ from $s_t^k$
-- $\bold p_t^k$ predicted policy, predicted by $f_p$ from $s_t^k$
+- $\mathbf p_t^k$ predicted policy, predicted by $f_p$ from $s_t^k$
 
 # 2️⃣ Building pieces
 
