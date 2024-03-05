@@ -4,7 +4,7 @@ Dépôt du code et de la documentation du projet muZero pour l'in-depth SDD 2024
 
 ## Objectifs du projet
 
-Expliquer et illustrer les principes généraux de muZero [1].  
+Expliquer et illustrer les principes généraux de muZero [\[1\]](https://arxiv.org/abs/1911.08265).  
 Expérimenter l'implémentation de muZero afin de fournir un retour d'expérience sur les difficultés de compréhension, d'implémentation, de réglages et les différentes options envisagées pour les résoudre.  
 Démontrer le fonctionnement de muZero.
 
