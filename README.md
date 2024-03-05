@@ -31,5 +31,5 @@ Séance 5 : préparation de la restitution puis restitution.
 
 https://www.furidamu.org/blog/2020/12/22/muzero-intuition/  
 https://jyopari.github.io/MCTS.html  
-
+https://medium.com/applied-data-science/how-to-build-your-own-muzero-in-python-f77d5718061a
 
