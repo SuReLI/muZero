@@ -2,7 +2,7 @@ import pytorch_lightning as pl
 import torch.nn as nn
 import torch
 from typing import Optional, List
-from training import train_models_one_step
+from training import LossMuZero, train_models_one_step
 
 class Dynamics(nn.Module):
     # g dynamics function
@@ -91,7 +91,7 @@ class Representation(nn.Module):
         return s_0
 
 
-class MuModel(pl.LightningModule):
+class MuModel(nn.Module):
     def __init__(
             self,
             observation_dim: int,
@@ -100,7 +100,8 @@ class MuModel(pl.LightningModule):
             K: int,
             lr: Optional[float]=0.001,
             layer_count: Optional[int]=4,
-            layer_dim: Optional[int]=64,):
+            layer_dim: Optional[int]=64,
+            criterion: Optional[LossMuZero]=LossMuZero(),):
         super().__init__()
 
         self.lf = lr
@@ -110,6 +111,7 @@ class MuModel(pl.LightningModule):
         self.observation_dim = observation_dim
         self.action_dim = action_dim
         self.state_dim = state_dim
+        self.criterion = criterion
 
         self.automatic_optimization = False # necessary since we define optimizers outside
 
@@ -134,12 +136,12 @@ class MuModel(pl.LightningModule):
             f_opt,
             g_opt,
             h_opt,
+            self.criterion,
             self.h, self.g, self.f,
-            verbose=False
+            verbose=True
         )
-        self.log('train_loss', loss, prog_bar=True)
 
-    def configure_optimizers(self):
+    def optimizers(self):
         f_opt = torch.optim.Adam(self.f.parameters(), lr=self.lf)
         g_opt = torch.optim.Adam(self.g.parameters(), lr=self.lf)
         h_opt = torch.optim.Adam(self.h.parameters(), lr=self.lf)

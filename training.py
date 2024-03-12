@@ -19,7 +19,8 @@ class LossMuZero():
             target_return, 
             pred_return, 
             target_policy, 
-            pred_policy):
+            pred_policy, 
+            target_horizon):
         """
         Compute the loss of the model, given targets and predictions for 
         the next K unrolled steps.
@@ -31,20 +32,23 @@ class LossMuZero():
         - pred_return  : tensor of predicted returns  [M*K*1]
         - target_policy: tensor of target policies    [M*K*A] (density)
         - pred_policy  : tensor of predicted policies [M*K*A] (density)
+        - target_horizon : number of unrolled steps for each trajectory [M*1]
 
         Loss on the reward is : MSE
         Loss on the return is : MSE
         Loss on the policy is : Cross-entropy
         """
         total_loss = 0
-        K = target_reward.shape[1]
+        M = target_reward.shape[0]
 
         # Compute the loss for each variable
-        for i in range(K):
-            reward_loss = self.lr(pred_reward[i], target_reward[i])
-            return_loss = self.lv(pred_return[i], target_return[i])
-            policy_loss = self.lp(pred_policy[i], target_policy[i])
-            total_loss += reward_loss + return_loss + policy_loss
+        for m in range(M):
+            current_k = target_horizon[m]
+            for i in range(current_k):
+                reward_loss = self.lr(pred_reward[m,i], target_reward[m,i])
+                return_loss = self.lv(pred_return[m,i], target_return[m,i])
+                policy_loss = self.lp(pred_policy[m,i], target_policy[m,i])
+                total_loss += reward_loss + return_loss + policy_loss
 
         return total_loss
     
@@ -52,7 +56,6 @@ class LossMuZero():
 def compute_predictions(
     observations,
     target_actions,
-    target_horizon,
     h, g, f, 
     horizon
 ):
@@ -62,7 +65,6 @@ def compute_predictions(
     Args:
     - observations: tensor of observations       [M*N*O]
     - target_actions: tensor of target actions   [M*K*A]
-    - target_horizon: number of unrolled steps for each trajectory [M*1]
     - h: model for the representation (obs[N-tuple] -> hidden state 's0')
     - g: model for the dynamics (reward, state)
     - f: model for the prediction (policy, value)
@@ -97,13 +99,13 @@ def compute_predictions(
     preds_policy = torch.stack(preds_policy, dim=1)
 
     # Apply mask over trajectories
-    k_tensor = torch.tensor(target_horizon)[:, None] 
-    indices = torch.arange(horizon)[None, :]
-    k_mask = (indices < k_tensor).int()
+    # k_tensor = torch.tensor(target_horizon)[:, None] 
+    # indices = torch.arange(horizon)[None, :]
+    # k_mask = (indices < k_tensor).int()
 
-    preds_reward = preds_reward * k_mask
-    preds_return = preds_return * k_mask
-    preds_policy = preds_policy * k_mask
+    # preds_reward = preds_reward * k_mask
+    # preds_return = preds_return * k_mask
+    # preds_policy = preds_policy * k_mask
     
 
     return preds_reward, preds_return, preds_policy
