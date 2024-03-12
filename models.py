@@ -1,7 +1,7 @@
 import torch.nn as nn
 import torch
 from typing import Optional, List
-from training import LossMuZero, train_models_one_step
+from training import LossMuZero, train_models_one_step, valid_models_one_step
 
 class Dynamics(nn.Module):
     # g dynamics function
@@ -55,7 +55,6 @@ class Prediction(nn.Module):
         self.output_layer2 = nn.Linear(hidden_dims, 1)
 
     def forward(self, s_k):
-        print(s_k.shape)
         x = torch.relu(self.input_layer(s_k))
         for layer in self.hidden_layers:
             x = torch.relu(layer(x))
@@ -145,6 +144,24 @@ class MuModel(nn.Module):
             h_opt,
             g_opt,
             f_opt,
+            self.criterion,
+            self.h, self.g, self.f,
+            self.K,
+            verbose=True
+        )
+        
+    def validation_step(self, batch):
+        
+        (observations, target_policies, target_actions, 
+         target_rewards, target_returns, target_horizon) = batch
+        
+        loss = valid_models_one_step(
+            observations,
+            target_policies,
+            target_actions,
+            target_rewards,
+            target_returns,
+            target_horizon,
             self.criterion,
             self.h, self.g, self.f,
             self.K,

@@ -181,7 +181,7 @@ def train_models_one_step(
 
     # Print if needed
     if verbose:
-        print(f"Loss: {loss.item():.4f}")
+        print(f"Training Loss: {loss.item():.4f}")
 
     return loss
 
@@ -230,7 +230,7 @@ def valid_models_one_step(
 
     # Print if needed
     if verbose:
-        print(f"Loss: {loss.item():.4f}")
+        print(f"Validation Loss: {loss.item():.4f}")
 
     return loss.item()
 
