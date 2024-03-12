@@ -1,5 +1,6 @@
 import numpy as np
-from model import dynamics, prediction
+
+# from model import dynamics, prediction
 
 
 class Node:
@@ -57,7 +58,9 @@ def selection_phase(root):
     trajectory = [root]
     history = []
 
-    while not current_node.children:  # while the current node is not a leaf node
+    while (
+        current_node.children
+    ):  # while the current node is not a leaf node == is a parent node == has children
         next_node, next_action = select_next_node(current_node)
         trajectory.append(next_node)
         history.append(next_action)
@@ -108,7 +111,8 @@ def backup_phase(trajectory, value, gamma=0.99):
     """
     global minQ, maxQ
 
-    for k, node in enumerate(reversed(trajectory)):
+    for k, node in enumerate(reversed(trajectory)[:-1]):
+        print("Backup step : ", k)
         if k == 0:
             G = value
         else:
@@ -122,12 +126,15 @@ def backup_phase(trajectory, value, gamma=0.99):
             maxQ = node.Q
         if node.Q < minQ:
             minQ = node.Q
-        node.Q = (node.Q - minQ) / (maxQ - minQ)  # Normalizing the Q values
+
+        node.Q = (
+            (node.Q - minQ) / (maxQ - minQ) if maxQ != minQ else node.Q
+        )  # Normalizing the Q values
 
     return None
 
 
-def planning(h, g, f, o, n_simulation=10):
+def planning(h, dynamic, prediction, o, n_simulation=10, debug=False):
     """
     The main function implementing the MCTS algorithm.
 
@@ -143,6 +150,10 @@ def planning(h, g, f, o, n_simulation=10):
     root = h(o)
     root = Node(1, root)
 
+    global minQ, maxQ
+    minQ = np.inf
+    maxQ = -np.inf
+
     # initializing the tree
     policy, value = prediction(root.state_representation)
 
@@ -151,8 +162,11 @@ def planning(h, g, f, o, n_simulation=10):
         root.children[action] = hypothetical_next_node
 
     for sim in range(n_simulation):
+        print("Simulation : ", sim + 1)
         leaf_node, trajectory, history = selection_phase(root)
-        value = expansion_phase(leaf_node, trajectory[-2], history[-1], g, f)
+        value = expansion_phase(
+            leaf_node, trajectory[-1], history[-1], dynamic, prediction
+        )
         backup_phase(trajectory, value)
 
     # compute MCTS policy
@@ -160,12 +174,12 @@ def planning(h, g, f, o, n_simulation=10):
     policy_MCTS = policy_MCTS / np.sum(policy_MCTS)
 
     # A choisir comme mu value
-    mu = np.sum(
+    nu = np.sum(
         [
             policy_MCTS[i] * children.Q
             for i, children in enumerate(root.children.values())
         ]
     )
-    mu_2 = root.Q
+    nu_2 = root.Q
 
-    return mu, policy_MCTS
+    return nu, policy_MCTS
