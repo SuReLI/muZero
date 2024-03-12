@@ -59,15 +59,21 @@ def selection_phase(root):
     Implements the selection phase of the MCTS algorithm.
     Starting from a root node, goes down the tree selecting nodes greddily with respect to the UCB.
     
-    Returns the trajectory of nodes, egdes selected.
+    Returns the trajectory of (node, egde) visited. 
     """
     return None
 
 
 
-def expansion_phase(node, f, g):
+def expansion_phase(leaf_node, f, g):
     """
-    Expands the tree from a leaf node. Leverages the model.
+    Expands the tree from the leaf node. Leverages the model.
     
+    """
+    return None
+
+def backup_phase(trajectory, reward):
+    """
+    Updates the Q values of the edges in the trajectory.
     """
     return None
