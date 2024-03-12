@@ -20,26 +20,18 @@ def acting(env, h, g_r, g_s, f_v, f_p):
         float reward
         float value
     """
-    observations = []
-    policies = []
-    actions = []
-    rewards = []
-    values = []
+    search_statistics = []
     
-    o_t = env.initial_state()
-    observations.append(o_t)
+    o_prev = env.initial_state() # previous observation
     
     mask = env.mask()
     is_terminal = False
     
     while not is_terminal:
-        nu_t, pi_t = planning(h, g_r, g_s, f_v, f_p, o_t, mask) # running MCTS algorithm from the current state o_t
+        nu_t, pi_t = planning(h, g_r, g_s, f_v, f_p, o_prev, mask) # running MCTS algorithm from the current state o_t
         a = random.choices(range(len(pi_t)), weights = pi_t, k=1)[0] # Choosing the action randomly according to policy pi_t distribution
-        r,o,is_terminal = env.step(a)
-        observations.append(o)
-        policies.append(pi_t)
-        actions.append(a)
-        rewards.append(r)
-        values.append(nu_t)
+        r,o_new,is_terminal = env.step(a)
+        search_statistics.append((o_prev,pi_t,a,r,nu_t))
+        o_prev = o_new
         
-    return observations, policies, actions, rewards, values
+    return search_statistics
