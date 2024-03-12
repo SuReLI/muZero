@@ -69,6 +69,10 @@ def compute_predictions(
     Args:
     - observations: tensor of observations       [M*N*O]
     - target_actions: tensor of target actions   [M*K*A]
+<<<<<<< HEAD
+=======
+    - target_horizon: number of unrolled steps for each trajectory [M]
+>>>>>>> 1a561e97982361b82e68cef6c2adfdd90a72e0ac
     - h: model for the representation (obs[N-tuple] -> hidden state 's0')
     - g: model for the dynamics (reward, state)
     - f: model for the prediction (policy, value)
@@ -117,10 +121,11 @@ def compute_predictions(
 
 def train_models_one_step(
     observations,
+    target_policies,
     target_actions,
     target_rewards,
     target_returns,
-    target_policies,
+    target_horizon,
     optimizer_h,
     optimizer_g,
     optimizer_f,
@@ -138,6 +143,7 @@ def train_models_one_step(
     - target_rewards: tensor of target rewards   [M*K*1]
     - target_returns: tensor of target returns   [M*K*1]
     - target_policies: tensor of target policies [M*K*A] (density)
+    - target_horizon: number of unrolled steps for each trajectory [M]
     - optimizer_h: optimizer for the model h
     - optimizer_g: optimizer for the model g
     - optimizer_f: optimizer for the model h
@@ -154,7 +160,7 @@ def train_models_one_step(
     optimizer_f.zero_grad()
 
     # Compute the predictions
-    preds = compute_predictions(observations, target_actions, h, g, f, horizon)
+    preds = compute_predictions(observations, target_actions, target_horizon, h, g, f, horizon)
     pred_rewards, pred_returns, pred_policies = preds
 
     # Compute the loss
@@ -182,10 +188,11 @@ def train_models_one_step(
 
 def valid_models_one_step(
     observations,
+    target_policies,
     target_actions,
     target_rewards,
     target_returns,
-    target_policies,
+    target_horizon,
     criterion,
     h, g, f,
     horizon,
@@ -200,6 +207,7 @@ def valid_models_one_step(
     - target_rewards: tensor of target rewards   [M*K*1]
     - target_returns: tensor of target returns   [M*K*1]
     - target_policies: tensor of target policies [M*K*A] (density)
+    - target_horizon: number of unrolled steps for each trajectory [M]
     - criterion: the global loss class (containing the 3 losses)
     - h: model for the representation (obs[N-tuple] -> hidden state 's0')
     - g: model for the dynamics (reward, state)
@@ -209,7 +217,7 @@ def valid_models_one_step(
     """ 
     with torch.no_grad():
         # Compute the predictions
-        preds = compute_predictions(observations, target_actions, h, g, f, horizon)
+        preds = compute_predictions(observations, target_actions, target_horizon, h, g, f, horizon)
         pred_rewards, pred_returns, pred_policies = preds
 
         # Compute the loss
