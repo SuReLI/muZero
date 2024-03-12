@@ -1,19 +1,22 @@
 import torch.nn as nn
 import torch
 from typing import Optional, List
-from training import LossMuZero, train_models_one_step, valid_models_one_step
+
 
 class Dynamics(nn.Module):
-    # g dynamics function
+    """
+    Class for Dynamics model: (s, r) ~ g(s, a)
+    """
+
     def __init__(self,
                 state_dim: int,
-                action_dim :int,
+                action_dim: int,
                 layer_count: Optional[int]=4,
     ):
         super().__init__()
-        self.layer_count = layer_count
         self.state_dim = state_dim
         self.action_dim = action_dim        
+        self.layer_count = layer_count
 
         self.input_layer = nn.Linear(state_dim + action_dim, state_dim + action_dim)
         self.hidden_layers = nn.ModuleList([
@@ -31,13 +34,17 @@ class Dynamics(nn.Module):
         r_k = self.output_layer2(y)
         return (r_k, s_k)
     
+
 class Prediction(nn.Module):
-    # f prediction function
+    """
+    Class for Prediction model: (p, v) ~ f(s)
+    """
+
     def __init__(self,
                  state_dim: int,
                  policy_dim: Optional[int] = 1,
                  value_dim: Optional[int] = 1,
-                 layer_count: Optional[int]=4,):
+                 layer_count: Optional[int] = 4,):
         super().__init__()
         self.layer_count = layer_count
         self.state_dim = state_dim
@@ -63,8 +70,12 @@ class Prediction(nn.Module):
         value_k = self.output_layer2(x)
         return (policy_k, value_k)
     
+
 class Representation(nn.Module):
-    # h representation function (input: observation, output: state)
+    """
+    Class for Representation model: s_0 = h(o)
+    """
+    
     def __init__(self,
                  observation_dim: int,
                  state_dim: int,
@@ -93,83 +104,3 @@ class Representation(nn.Module):
             # maybe add batch norm here
         s_0 = self.output_layer(x)
         return s_0
-
-
-class MuModel(nn.Module):
-    def __init__(
-            self,
-            observation_dim: int,
-            action_dim: int,
-            state_dim: int,
-            N: int,
-            K: int,
-            lr: Optional[float]=0.001,
-            layer_count: Optional[int]=4,
-            layer_dim: Optional[int]=64,
-            criterion: Optional[LossMuZero]=LossMuZero(),):
-        super().__init__()
-
-        self.lf = lr
-        self.layer_count = layer_count
-        self.layer_dim = layer_dim
-        self.K = K
-        self.N = N
-        self.observation_dim = observation_dim
-        self.action_dim = action_dim
-        self.state_dim = state_dim
-        self.criterion = criterion
-
-        self.automatic_optimization = False # necessary since we define optimizers outside
-
-        self.g = Dynamics(state_dim=state_dim,action_dim=action_dim, layer_count=4)
-        self.f = Prediction(state_dim=state_dim, policy_dim=action_dim, value_dim=1, layer_count=4)
-        self.h = Representation(observation_dim=observation_dim, state_dim=state_dim,N=self.N, layer_count=4)
-
-
-    def forward(self, x):
-        return self.f(x), self.g(x), self.h(x)
-
-    def training_step(self, batch):
-        (observations, target_policies, target_actions, 
-         target_rewards, target_returns, target_horizon) = batch
-        f_opt, g_opt, h_opt = self.optimizers()
-
-        loss = train_models_one_step(
-            observations,
-            target_policies,
-            target_actions,
-            target_rewards,
-            target_returns,
-            target_horizon,
-            h_opt,
-            g_opt,
-            f_opt,
-            self.criterion,
-            self.h, self.g, self.f,
-            self.K,
-            verbose=True
-        )
-        
-    def validation_step(self, batch):
-        
-        (observations, target_policies, target_actions, 
-         target_rewards, target_returns, target_horizon) = batch
-        
-        loss = valid_models_one_step(
-            observations,
-            target_policies,
-            target_actions,
-            target_rewards,
-            target_returns,
-            target_horizon,
-            self.criterion,
-            self.h, self.g, self.f,
-            self.K,
-            verbose=True
-        )
-
-    def optimizers(self, c=0.1):
-        f_opt = torch.optim.Adam(self.f.parameters(), lr=self.lf, weight_decay=c)
-        g_opt = torch.optim.Adam(self.g.parameters(), lr=self.lf, weight_decay=c)
-        h_opt = torch.optim.Adam(self.h.parameters(), lr=self.lf, weight_decay=c)
-        return f_opt, g_opt, h_opt
