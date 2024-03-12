@@ -8,25 +8,26 @@ class Dynamics(nn.Module):
     # g dynamics function
     def __init__(self,
                  layer_count: int,
-                 observation_dim: int, 
                  state_dim: int):
         super().__init__()
         self.layer_count = layer_count
-        self.observation_dim = observation_dim
         self.state_dim = state_dim
 
-        self.input_layer = nn.Linear(observation_dim, state_dim)
-        self.hidden_layers = nn.ModuleList([nn.Linear(state_dim, state_dim) for _ in range(layer_count)])
-        self.output_layer = nn.Linear(state_dim, state_dim)
-        
+        self.input_layer = nn.Linear(state_dim + 1, state_dim + 1)
+        self.hidden_layers = nn.ModuleList([
+            nn.Linear(state_dim + 1, state_dim + 1) for _ in range(layer_count)])
+        self.output_layer1 = nn.Linear(state_dim + 1, state_dim)
+        self.output_layer2 = nn.Linear(state_dim + 1, 1)
 
-    def forward(self, x):
-        x = torch.relu(self.input_layer(x))
+    def forward(self, x, a):
+        y = torch.concat(x, a)
+        y = torch.relu(self.input_layer(y))
         for layer in self.hidden_layers:
-            x = torch.relu(layer(x))
+            y = torch.relu(layer(y))
             # maybe add batch norm here
-        x = self.output_layer(x)
-        return x
+        s = self.output_layer1(y)
+        r = self.output_layer2(y)
+        return (s, r)
 
 
 class MuModel(pl.LightningModule):
