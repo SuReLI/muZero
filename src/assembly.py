@@ -8,6 +8,8 @@ from torch.nn import Module
 from environment import AbstractEnvironment, DummyEnvironment
 from replaybuffer import ReplayBuffer
 
+from training.mu_model import MuModel
+
 
 def planning(
     representation: Module,
@@ -60,6 +62,8 @@ def main(
     minibatch_nb: int = 1_000,
     exploration_every: int = 5,
     exploration_size: int = 500,
+    look_ahead_steps: int = 5,
+    look_back_steps: int = 10,
     save_models_every: int | None = 5,
     save_models_to: str = "models",
     verbose: bool = True,
@@ -68,6 +72,17 @@ def main(
 
     rb = ReplayBuffer(capacity=replay_buffer_capacity)
     env = DummyEnvironment()
+    
+    # Initialize the MuModel
+    # [?] Supposing that env.observation_space.n is the dimension of the observation space and 
+    #     env.action_space.n is the number of possible actions (gym environment specific)
+    mu_model = MuModel(
+        observation_dim=env.observation_space.n, # dimension of the observation space (Cart Pole: 4)
+        action_dim=env.action_space.n, # number of possible actions (Cart Pole: 2)
+        N=look_back_steps, # number of past observations used during training (arbitrary)
+        K=look_ahead_steps, # number of future steps used during training (arbitrary)
+        state_dim=look_back_steps * env.observation_dim, # dimension of the state space (arbitrary)
+    )
 
     # Initial exploration to fill in the replay buffer
     for _ in range(initital_exploration):
@@ -79,16 +94,21 @@ def main(
             observations,
             target_policies,
             target_actions,
+            # [!] target_reward missing
             target_returns,
             episode_lengths,
-        ) = rb.sample(minibatch_size)
+        ) = rb.sample(minibatch_size,
+                      LOOK_AHEAD_STEPS=look_ahead_steps,
+                      LOOK_BACK_STEPS=look_back_steps)
 
-        loss = training(
-            observations,
-            target_policies,
-            target_actions,
-            target_returns,
-            episode_lengths,
+        loss = mu_model.training_step(
+            (
+                observations,
+                target_policies,
+                target_actions,
+                # [!] target_reward missing
+                target_returns,
+                episode_lengths,)
         )
 
         if verbose:
