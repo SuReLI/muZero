@@ -60,7 +60,7 @@ def planning(h, g_r, g_s, f_v, f_p, o: Tensor, mask: Tensor) -> float, Tensor:
 ## 💃 Acting
 
 ```python
-def acting(env: Environment) -> List[tuple[Tensor, Tensor, int, float, float]]:
+def acting(env: Environment, h, g_r, g_s, f_v, f_p) -> List[tuple[Tensor, Tensor, int, float, float]]:
 ```
 
 ### Inputs
@@ -72,6 +72,8 @@ def acting(env: Environment) -> List[tuple[Tensor, Tensor, int, float, float]]:
     - `reward: float`
     - `state: Tensor` of size $O$
     - `is_terminal: bool`
+  - `mask() -> Tensor` returns the mask of possible actions from the current state
+- `h, g_r, g_s, f_v, f_p` the five networks
 
 ### Outputs
 
