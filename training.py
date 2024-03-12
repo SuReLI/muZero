@@ -52,6 +52,7 @@ class LossMuZero():
 def compute_predictions(
     observations,
     target_actions,
+    target_horizon,
     h, g, f, 
     horizon
 ):
@@ -68,9 +69,9 @@ def compute_predictions(
     - horizon: number of unrolled steps (ideal: K=5)
     """
     # Initialize the prediction lists
-    pred_rewards = []
-    pred_returns = []
-    pred_policies = []
+    preds_reward = []
+    preds_return = []
+    preds_policy = []
 
     # Predictions for the next K unrolled steps
     prev_state = h(observations) 
@@ -83,23 +84,29 @@ def compute_predictions(
         policy, value = f(state)
 
         # Store the predictions
-        pred_rewards.append(reward)  # List of K elements of size [M]
-        pred_returns.append(value)
-        pred_policies.append(policy)
+        preds_reward.append(reward)  # List of K elements of size [M]
+        preds_return.append(value)
+        preds_policy.append(policy)
 
         # Update the previous state
         prev_state = state
 
     # Reshape the predictions [M*K]
-    pred_rewards  = torch.stack(pred_rewards, dim=1)
-    pred_returns  = torch.stack(pred_returns, dim=1)
-    pred_policies = torch.stack(pred_policies, dim=1)
+    preds_reward = torch.stack(preds_reward, dim=1)
+    preds_return = torch.stack(preds_return, dim=1)
+    preds_policy = torch.stack(preds_policy, dim=1)
 
     # Apply mask over trajectories
-    # 1 * target_horizon + 0 * reste
+    k_tensor = torch.tensor(target_horizon)[:, None] 
+    indices = torch.arange(horizon)[None, :]
+    k_mask = (indices < k_tensor).int()
+
+    preds_reward = preds_reward * k_mask
+    preds_return = preds_return * k_mask
+    preds_policy = preds_policy * k_mask
     
 
-    return pred_rewards, pred_returns, pred_policies
+    return preds_reward, preds_return, preds_policy
 
 
 def train_models_one_step(
