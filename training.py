@@ -42,7 +42,7 @@ class LossMuZero():
         Loss on the return is : MSE
         Loss on the policy is : Cross-entropy
         """
-        total_loss = 0
+        total_loss = torch.tensor(0,dtype=torch.float32 , requires_grad=True)
         M = target_reward.shape[0]
 
         # Compute the loss for each variable
@@ -52,8 +52,11 @@ class LossMuZero():
                 reward_loss = self.lr(pred_reward[m,i], target_reward[m,i])
                 return_loss = self.lv(pred_return[m,i], target_return[m,i])
                 policy_loss = self.lp(pred_policy[m,i], target_policy[m,i])
-                total_loss += reward_loss + return_loss + policy_loss
+                # total_loss = torch.cat([total_loss, reward_loss + return_loss + policy_loss])
+                total_loss = torch.add(total_loss, reward_loss + return_loss + policy_loss)
 
+        # total_loss = total_loss.sum()
+        
         return total_loss
     
 
@@ -69,10 +72,6 @@ def compute_predictions(
     Args:
     - observations: tensor of observations       [M*N*O]
     - target_actions: tensor of target actions   [M*K*A]
-<<<<<<< HEAD
-=======
-    - target_horizon: number of unrolled steps for each trajectory [M]
->>>>>>> 1a561e97982361b82e68cef6c2adfdd90a72e0ac
     - h: model for the representation (obs[N-tuple] -> hidden state 's0')
     - g: model for the dynamics (reward, state)
     - f: model for the prediction (policy, value)
@@ -160,7 +159,7 @@ def train_models_one_step(
     optimizer_f.zero_grad()
 
     # Compute the predictions
-    preds = compute_predictions(observations, target_actions, target_horizon, h, g, f, horizon)
+    preds = compute_predictions(observations, target_actions, h, g, f, horizon)
     pred_rewards, pred_returns, pred_policies = preds
 
     # Compute the loss
@@ -170,7 +169,8 @@ def train_models_one_step(
         target_returns, 
         pred_returns,
         target_policies, 
-        pred_policies
+        pred_policies,
+        target_horizon
     )
     loss.backward()
 
@@ -183,7 +183,7 @@ def train_models_one_step(
     if verbose:
         print(f"Loss: {loss.item():.4f}")
 
-    return loss.item()
+    return loss
 
 
 def valid_models_one_step(
@@ -217,14 +217,15 @@ def valid_models_one_step(
     """ 
     with torch.no_grad():
         # Compute the predictions
-        preds = compute_predictions(observations, target_actions, target_horizon, h, g, f, horizon)
+        preds = compute_predictions(observations, target_actions, h, g, f, horizon)
         pred_rewards, pred_returns, pred_policies = preds
 
         # Compute the loss
         loss = criterion.compute_loss(
             target_rewards, pred_rewards,
             target_returns, pred_returns,
-            target_policies, pred_policies
+            target_policies, pred_policies,
+            target_horizon
         )
 
     # Print if needed
