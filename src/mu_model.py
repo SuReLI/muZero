@@ -8,6 +8,17 @@ from losses import Loss, compute_predictions
 
 class MuModel(nn.Module):
     """
+    Class in which the three models (h, g, f) are stored. It enables 
+    training and validation steps.
+
+    Attrs:
+    - observation_dim [int] : dimension of the observation space
+    - action_dim [int] : dimension of the action space
+    - state_dim [int] : dimension of the state space
+    - N [int] : number of past observations 
+    - K [int] : number of unrolled steps
+    - lr [float] : learning rate
+    
     """
     def __init__(
             self,
