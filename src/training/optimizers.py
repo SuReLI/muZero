@@ -22,7 +22,7 @@ class Optimizers:
         self.opt_h = opt_h if opt_h is not None else optim.Adam(h.parameters(), lr=self.lr)
         self.opt_g = opt_g if opt_g is not None else optim.Adam(g.parameters(), lr=self.lr)
         self.opt_f = opt_f if opt_f is not None else optim.Adam(f.parameters(), lr=self.lr)
-        print(f"opt types: {type(self.opt_h)}, {type(self.opt_g)}, {type(self.opt_f)}")
+        #print(f"opt types: {type(self.opt_h)}, {type(self.opt_g)}, {type(self.opt_f)}")
     @classmethod
     def basic_optimizer(cls, h: nn.Module, g: nn.Module, f: nn.Module) -> 'Optimizers':
         lr = 0.001

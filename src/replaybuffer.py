@@ -132,12 +132,15 @@ class ReplayBuffer:
             )
             policies_batch.append(policies)
 
-            # Pad actions with the last action at the end
+            # Pad actions with tensor of zeros at the end
             actions = torch.concat(
                 [
-                    torch.tensor(actions[start_point : start_point + LOOK_AHEAD_STEPS + 1]),
-                    torch.full(
-                        (max(0, LOOK_AHEAD_STEPS + 1 - length + start_point),), actions[-1]
+                    torch.stack(actions[start_point : start_point + LOOK_AHEAD_STEPS + 1]),
+                    torch.zeros(
+                        (
+                            max(0, LOOK_AHEAD_STEPS + 1 - length + start_point),
+                            action_space_size,
+                        )
                     ),
                 ]
             )

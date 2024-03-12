@@ -1,1 +1,1 @@
-from src.training.mu_model import MuModel
+from .mu_model import MuModel

@@ -5,10 +5,14 @@ import torch
 from torch import Tensor
 from torch.nn import Module
 
+import random
+
+import gym
+
 from environment import AbstractEnvironment, DummyEnvironment
 from replaybuffer import ReplayBuffer
 
-from training.mu_model import MuModel
+from training import MuModel
 
 
 def planning(
@@ -26,8 +30,26 @@ def acting(
     representation: Module,
     dynamics: Module,
     prediction: Module,
-) -> List[tuple[Tensor, Tensor, int, float, float]]:
-    pass
+) -> List[tuple[Tensor, Tensor, Tensor, float, float]]:
+    # Let's suppose the cartpole env, which has a 4-dim observation space and a 2-dim action space
+
+    # Random acting
+    action_dim = 2
+    observation_dim = 4
+    
+    size_episode = 100
+
+    episode = []
+    for _ in range(size_episode):
+        episode.append((
+            torch.rand(observation_dim), # observations
+            torch.rand(action_dim),      # target policies
+            torch.rand(action_dim),      # target actions
+            random.random(),                  # target rewards
+            random.random(),                  # target returns
+        ))
+
+    return episode
 
 
 def training(
@@ -71,22 +93,21 @@ def main(
     os.makedirs(save_models_to, exist_ok=True)
 
     rb = ReplayBuffer(capacity=replay_buffer_capacity)
-    env = DummyEnvironment()
+    #env = DummyEnvironment()
+    env = gym.make("CartPole-v1")
     
     # Initialize the MuModel
-    # [?] Supposing that env.observation_space.n is the dimension of the observation space and 
-    #     env.action_space.n is the number of possible actions (gym environment specific)
     mu_model = MuModel(
-        observation_dim=env.observation_space.n, # dimension of the observation space (Cart Pole: 4)
-        action_dim=env.action_space.n, # number of possible actions (Cart Pole: 2)
-        N=look_back_steps, # number of past observations used during training (arbitrary)
-        K=look_ahead_steps, # number of future steps used during training (arbitrary)
-        state_dim=look_back_steps * env.observation_dim, # dimension of the state space (arbitrary)
+        observation_dim=env.observation_space.shape[0],  # dimension of the observation space (Cart Pole: 4)
+        action_dim=env.action_space.n,                   # number of possible actions (Cart Pole: 2)
+        N=look_back_steps,                               # number of past observations used during training (arbitrary)
+        K=look_ahead_steps,                              # number of future steps used during training (arbitrary)
+        state_dim=look_back_steps * env.observation_space.shape[0], # dimension of the state space (arbitrary)
     )
 
     # Initial exploration to fill in the replay buffer
     for _ in range(initital_exploration):
-        episode = acting(env, h, g, f)
+        episode = acting(env, mu_model.h, mu_model.g, mu_model.f)
         rb.push(episode)
 
     for i in range(minibatch_nb):
@@ -94,8 +115,8 @@ def main(
             observations,
             target_policies,
             target_actions,
-            # [!] target_reward missing
-            target_returns,
+            target_rewards,
+            target_returns, # same as target_values (z in the paper)
             episode_lengths,
         ) = rb.sample(minibatch_size,
                       LOOK_AHEAD_STEPS=look_ahead_steps,
@@ -106,8 +127,8 @@ def main(
                 observations,
                 target_policies,
                 target_actions,
-                # [!] target_reward missing
-                target_returns,
+                target_rewards,
+                target_returns, # same as target_values (z in the paper)
                 episode_lengths,)
         )
 
@@ -116,10 +137,10 @@ def main(
 
         if (i + 1) % exploration_every:
             for _ in range(exploration_size):
-                episode = acting(env, h, g, f)
+                episode = acting(env, mu_model.h, mu_model.g, mu_model.f)
                 rb.push(episode)
 
         if save_models_every is not None and (i + 1) % save_models_every:
-            torch.save(f.state_dict(), f"{save_models_to}/prediction_{i}.pt")
-            torch.save(g.state_dict(), f"{save_models_to}/dynamics_{i}.pt")
-            torch.save(h.state_dict(), f"{save_models_to}/representation_{i}.pt")
+            torch.save(mu_model.f.state_dict(), f"{save_models_to}/prediction_{i}.pt")
+            torch.save(mu_model.g.state_dict(), f"{save_models_to}/dynamics_{i}.pt")
+            torch.save(mu_model.h.state_dict(), f"{save_models_to}/representation_{i}.pt")

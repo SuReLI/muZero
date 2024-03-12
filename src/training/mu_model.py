@@ -1,10 +1,10 @@
 import torch.nn as nn
 import torch
-from typing import Optional, List
+from typing import Optional
 
-from src.training.models import Dynamics, Prediction, Representation
-from src.training.losses import Loss, compute_predictions
-from src.training.optimizers import Optimizers
+from .models import Dynamics, Prediction, Representation
+from .losses import Loss, compute_predictions
+from .optimizers import Optimizers
 
 
 class MuModel(nn.Module):
@@ -99,7 +99,7 @@ class MuModel(nn.Module):
         """ 
         # Set gradients to zero
 
-        print(f"Opt types: {type(optimizer_h)}, {type(optimizer_g)}, {type(optimizer_f)}")
+        #print(f"Opt types: {type(optimizer_h)}, {type(optimizer_g)}, {type(optimizer_f)}")
         optimizer_h.zero_grad()
         optimizer_g.zero_grad()
         optimizer_f.zero_grad()
@@ -199,7 +199,7 @@ class MuModel(nn.Module):
             g=self.g,
             f=self.f,
             horizon=self.K,
-            verbose=True
+            verbose=False
         )
 
         return loss
