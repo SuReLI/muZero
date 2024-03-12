@@ -2,12 +2,16 @@
 File in which we define the training loop for the model.
 """
 
+from typing import Optional
 import torch
 import torch.nn as nn
 
 
 class LossMuZero():
-    def __init__(self, lr, lv, lp):
+    def __init__(self, 
+                lr: Optional[nn.Module] = nn.MSELoss(),
+                lv: Optional[nn.Module] = nn.MSELoss(), 
+                lp: Optional[nn.Module] = nn.CrossEntropyLoss()):
         self.lr = lr
         self.lv = lv
         self.lp = lp

@@ -1,4 +1,3 @@
-import pytorch_lightning as pl
 import torch.nn as nn
 import torch
 from typing import Optional, List
@@ -21,7 +20,8 @@ class Dynamics(nn.Module):
         self.output_layer2 = nn.Linear(state_dim + 1, 1)
 
     def forward(self, s, a):
-        y = torch.concat(s, a)
+        print(s.shape, a.shape)
+        y = torch.cat([s, a], dim=-1)
         y = torch.relu(self.input_layer(y))
         for layer in self.hidden_layers:
             y = torch.relu(layer(y))
@@ -123,7 +123,7 @@ class MuModel(nn.Module):
     def forward(self, x):
         return self.f(x), self.g(x), self.h(x)
 
-    def training_step(self, batch, batch_idx):
+    def training_step(self, batch):
         observations, target_actions, target_rewards, target_returns, target_policies = batch
         f_opt, g_opt, h_opt = self.optimizers()
 
@@ -133,11 +133,12 @@ class MuModel(nn.Module):
             target_rewards,
             target_returns,
             target_policies,
-            f_opt,
-            g_opt,
             h_opt,
+            g_opt,
+            f_opt,
             self.criterion,
             self.h, self.g, self.f,
+            self.K,
             verbose=True
         )
 
