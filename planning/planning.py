@@ -48,10 +48,16 @@ class Edge():
         return 0
     
     
+    
+    
+    
 def select_next_node(node):
     """
     Starting from a node, selects the most promising edge based on the UCB.
     """
+    
+    
+    
     return None
 
 def selection_phase(root):
@@ -64,12 +70,30 @@ def selection_phase(root):
     return None
 
 
+from model import dynamics, prediction
 
-def expansion_phase(leaf_node, f, g):
+def expansion_phase(leaf_node, action_chosen, f, g):
     """
     Expands the tree from the leaf node. Leverages the model.
     
+    Parameters:
+    ----------
+    leaf_node : The node to expand.
+    action_chosen : The action chosen from the leaf node.
+    
     """
+    
+    # The reward and state are computed by the *dynamics* function
+    r, s = dynamics(leaf_node.state_representation, action_chosen)
+    # The policy and value are computed by the *prediction* function
+    policy, value = prediction(s)
+    
+    # A new node is selected and added to the search tree
+    new_node = 
+    
+    # Initialize the edges stemming from the new node
+    
+    
     return None
 
 def backup_phase(trajectory, reward):
