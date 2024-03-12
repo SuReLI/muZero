@@ -62,3 +62,12 @@ def selection_phase(root):
     Returns the trajectory of nodes, egdes selected.
     """
     return None
+
+
+
+def expansion_phase(node, f, g):
+    """
+    Expands the tree from a leaf node. Leverages the model.
+    
+    """
+    return None
