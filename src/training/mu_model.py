@@ -2,8 +2,9 @@ import torch.nn as nn
 import torch
 from typing import Optional, List
 
-from models import Dynamics, Prediction, Representation
-from losses import Loss, compute_predictions
+from src.training.models import Dynamics, Prediction, Representation
+from src.training.losses import Loss, compute_predictions
+from src.training.optimizers import Optimizers
 
 
 class MuModel(nn.Module):
@@ -33,7 +34,8 @@ class MuModel(nn.Module):
             criterion: Optional[Loss]=Loss(),
             h_model: Optional[nn.Module]=None,
             g_model: Optional[nn.Module]=None,
-            f_model: Optional[nn.Module]=None):
+            f_model: Optional[nn.Module]=None,
+            optimizers: Optional[Optimizers]=None):
         super().__init__()
 
         self.lr = lr
@@ -50,14 +52,17 @@ class MuModel(nn.Module):
         g_model = g_model if g_model is not None else Dynamics
         f_model = f_model if f_model is not None else Prediction
 
-        self.g = f_model(state_dim=state_dim,action_dim=action_dim, layer_count=4)
-        self.f = g_model(state_dim=state_dim, policy_dim=action_dim, value_dim=1, layer_count=4)
+        self.g = g_model(state_dim=state_dim,action_dim=action_dim, layer_count=4)
+        self.f = f_model(state_dim=state_dim, policy_dim=action_dim, value_dim=1, layer_count=4)
         self.h = h_model(observation_dim=observation_dim, state_dim=state_dim,N=self.N, layer_count=4)
+
+        self.optimizers = optimizers if optimizers is not None else Optimizers.basic_optimizer(self.h, self.g, self.f)
 
     def forward(self, x):
         return self.f(x), self.g(x), self.h(x)
 
     def _train_models_one_step(
+        self,
         observations,
         target_policies,
         target_actions,
@@ -93,6 +98,8 @@ class MuModel(nn.Module):
         - verbose: print the loss at (each) iteration
         """ 
         # Set gradients to zero
+
+        print(f"Opt types: {type(optimizer_h)}, {type(optimizer_g)}, {type(optimizer_f)}")
         optimizer_h.zero_grad()
         optimizer_g.zero_grad()
         optimizer_f.zero_grad()
@@ -175,21 +182,23 @@ class MuModel(nn.Module):
     def training_step(self, batch):
         (observations, target_policies, target_actions, 
          target_rewards, target_returns, target_horizon) = batch
-        f_opt, g_opt, h_opt = self.optimizers()
+
 
         loss = self._train_models_one_step(
-            observations,
-            target_policies,
-            target_actions,
-            target_rewards,
-            target_returns,
-            target_horizon,
-            h_opt,
-            g_opt,
-            f_opt,
-            self.criterion,
-            self.h, self.g, self.f,
-            self.K,
+            observations=observations,
+            target_policies=target_policies,
+            target_actions=target_actions,
+            target_rewards=target_rewards,
+            target_returns=target_returns,
+            target_horizon=target_horizon,
+            optimizer_h=self.optimizers.opt_h, 
+            optimizer_g=self.optimizers.opt_g, 
+            optimizer_f=self.optimizers.opt_f,
+            criterion=self.criterion,
+            h=self.h, 
+            g=self.g,
+            f=self.f,
+            horizon=self.K,
             verbose=True
         )
 
@@ -214,9 +223,3 @@ class MuModel(nn.Module):
         )
 
         return loss
-
-    def optimizers(self, c=0.1):
-        f_opt = torch.optim.Adam(self.f.parameters(), lr=self.lf, weight_decay=c)
-        g_opt = torch.optim.Adam(self.g.parameters(), lr=self.lf, weight_decay=c)
-        h_opt = torch.optim.Adam(self.h.parameters(), lr=self.lf, weight_decay=c)
-        return f_opt, g_opt, h_opt
