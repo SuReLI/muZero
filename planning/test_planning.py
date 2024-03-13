@@ -3,8 +3,9 @@ import numpy as np
 from planning import planning
 
 PRINT_LOGS = False
+N_SIMULATION = 10
 
-ACTION_SPACE_SIZE = 2
+ACTION_SPACE_SIZE = 4
 STATE_SPACE_SIZE = 10
 
 
@@ -39,7 +40,7 @@ nu, policy_MCTS = planning(
     dynamic=dynamic,
     prediction=prediction,
     o=observations,
-    n_simulation=10,
+    n_simulation=N_SIMULATION,
     debug=PRINT_LOGS,
 )
 print("Done :)")
