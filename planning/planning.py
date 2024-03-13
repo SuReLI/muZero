@@ -10,25 +10,37 @@ class Node:
 
         Parameters
         ----------
-        parent_state : Current state from which the edge stems from.
-        P : The probability of selecting this edge from the parent state. Given by the model policy.
-        next_state : The state that this edge leads to.
-        Reward : The reward obtained by taking this edge.
-        N : The number of times this edge has been visited.
+        P : the probability of going from the parent node to this node. Given by the model policy.
+        state_representation : the state representation of this node.
+        reward : the reward obtained going from the parent node to this node.
+        N : the visit count i.e. the number of times this node has been visited.
         """
 
         self.P = P
         self.state_representation = state_representation
         self.reward = reward
         self.N = N
+
+        # Initialize the Q value to 0
         self.Q = 0
 
-        self.children = {}  # dictionnay of action : Node
+        # Initialize the children of this node to an empty dictionary
+        self.children = {}
 
 
-def upper_confidence_bound(parent, child, c1=1.25, c2=19652):
+def upper_confidence_bound(
+    parent: Node, child: Node, c1: float = 1.25, c2: float = 19652
+):
     """
-    Returns the upper confidence bound of the edge.
+    Computes the upper confidence bound of the child node.
+
+    Parameters:
+    ----------
+    parent : the parent node.
+    child : the child node. **The UCB is computed for this node.**
+    c1 : an exploration/exploitation tradeoff parameter. Set in the muZero paper to 1.25.
+    c2 : an exploration/exploitation tradeoff parameter. Set in the muZero paper to 19652.
+
     """
 
     return child.Q + child.P * (np.sqrt(parent.N) / (1 + child.N)) * (
@@ -36,9 +48,18 @@ def upper_confidence_bound(parent, child, c1=1.25, c2=19652):
     )
 
 
-def select_next_node(node):
+def select_next_node(node: Node):
     """
-    Starting from a node, selects the most promising edge based on the UCB.
+    Starting from a node, selects the children greedly with respect to the UCB.
+
+    Parameters:
+    ----------
+    node : the node to select the next child from.
+
+    Returns:
+    -------
+    The next child, and the action that leads to it.
+
     """
     _, next_action, next_child = max(
         (upper_confidence_bound(node, child), action, child)
@@ -47,12 +68,19 @@ def select_next_node(node):
     return next_child, next_action
 
 
-def selection_phase(root, debug=False):
+def selection_phase(root: Node, debug: bool = False):
     """
     Implements the selection phase of the MCTS algorithm.
     Starting from a root node, goes down the tree selecting nodes greddily with respect to the UCB.
 
-    Returns the trajectory of nodes, egdes selected.
+    Parameters:
+    ----------
+    root : the root node of the tree. Where the selection starts.
+    debug : whether to print logs or not.
+
+    Returns:
+    -------
+    The leaf node, the trajectory of nodes selected, and the history of actions taken.
     """
     current_node = root
     trajectory = [root]
@@ -74,17 +102,25 @@ def selection_phase(root, debug=False):
     return leaf_node, trajectory, history
 
 
-def expansion_phase(leaf_node, parent, action, dynamic, prediction, debug=False):
+def expansion_phase(
+    leaf_node: Node,
+    parent: Node,
+    action: float,
+    dynamic: callable,
+    prediction: callable,
+    debug: bool = False,
+):
     """
     Expands the tree at the leaf node. Leverages the model.
 
     Parameters:
     ----------
-    leaf_node : The node to expand.
-    parent : The parent node of the leaf node.
-    action : The action that leads from the parent node to the leaf node.
-    dynamic : The model dynamics function.
-    prediction : The model prediction function.
+    leaf_node : the node to expand.
+    parent : the parent node of the leaf node.
+    action : the action that leads from the parent node to the leaf node.
+    dynamic : the model dynamic function.
+    prediction : the model prediction function.
+    debug : whether to print logs or not.
 
     Returns:
     -------
@@ -113,15 +149,18 @@ def expansion_phase(leaf_node, parent, action, dynamic, prediction, debug=False)
     return value
 
 
-def backup_phase(trajectory, value, gamma=0.99, debug=False):
+def backup_phase(
+    trajectory: list[Node], value: float, gamma: float = 0.99, debug: bool = False
+):
     """
     Updates the Q values of the edges in the trajectory.
 
     Parameters:
     ----------
-    trajectory :List[Node], The trajectory of nodes selected.
-    value : The value of the leaf node.
-    gamma : The discount factor.
+    trajectory : the trajectory of nodes selected.
+    value : the value of the leaf node.
+    gamma : the discount factor.
+    debug : whether to print logs or not.
     """
     global minQ, maxQ
 
@@ -153,17 +192,25 @@ def backup_phase(trajectory, value, gamma=0.99, debug=False):
     return None
 
 
-def planning(h, dynamic, prediction, o, n_simulation=10, debug=False):
+def planning(
+    h: callable,
+    dynamic: callable,
+    prediction: callable,
+    o: list[np.array],
+    n_simulation: int = 10,
+    debug: bool = False,
+):
     """
     The main function implementing the MCTS algorithm.
 
     Parameters:
     ----------
-    h : The model representation function.
-    g : The model dynamics function.
-    f : The model prediction function.
-    o : list of observations
-    n_simulation : int, The number of simulations to run.
+    h : the model representation function.
+    dynamic : the model dynamic function.
+    prediction : the model prediction function.
+    o : the past observations
+    n_simulation : the number of simulations to run.
+    debug : whether to print logs or not.
     """
     T = 1
     root = h(o)
