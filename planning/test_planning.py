@@ -2,10 +2,10 @@ import numpy as np
 
 from planning import planning
 
-action_space_size = 2
-state_space_size = 10
+PRINT_LOGS = False
 
-# planning(h, g, f, o, n_simulation=10):
+ACTION_SPACE_SIZE = 2
+STATE_SPACE_SIZE = 10
 
 
 # representation model : identity
@@ -17,24 +17,29 @@ def h(observations):
 # dynamics model : random dynamic
 def dynamic(state, action):
     random_reward = np.random.randn()
-    random_next_state = np.random.rand(state_space_size)
+    random_next_state = np.random.rand(STATE_SPACE_SIZE)
     return random_reward, random_next_state
 
 
 # prediction model : random prediction
 def prediction(state):
-    random_policy = np.random.rand(action_space_size)
+    random_policy = np.random.rand(ACTION_SPACE_SIZE)
     random_policy = random_policy / random_policy.sum()
     random_value = np.random.randn()
     return random_policy, random_value
 
 
 # 10 observations
-observations = [np.random.rand(state_space_size) for _ in range(10)]
+observations = [np.random.rand(STATE_SPACE_SIZE) for _ in range(10)]
 
 
-print("Start planning ...")
+print("Start MCTS planning ...")
 nu, policy_MCTS = planning(
-    h, dynamic, prediction, observations, n_simulation=10, debug=True
+    h=h,
+    dynamic=dynamic,
+    prediction=prediction,
+    o=observations,
+    n_simulation=10,
+    debug=PRINT_LOGS,
 )
-print("easy")
+print("Done :)")

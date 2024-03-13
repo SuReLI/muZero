@@ -47,7 +47,7 @@ def select_next_node(node):
     return next_child, next_action
 
 
-def selection_phase(root):
+def selection_phase(root, debug=False):
     """
     Implements the selection phase of the MCTS algorithm.
     Starting from a root node, goes down the tree selecting nodes greddily with respect to the UCB.
@@ -58,12 +58,15 @@ def selection_phase(root):
     trajectory = [root]
     history = []
 
-    while (
-        current_node.children
-    ):  # while the current node is not a leaf node == is a parent node == has children
+    # while the current node is not a leaf node == is a parent node == has children
+    if debug:
+        print("Going down the tree toward a leaf node ...")
+    while current_node.children:
         next_node, next_action = select_next_node(current_node)
+
         trajectory.append(next_node)
         history.append(next_action)
+
         current_node = next_node
 
     leaf_node = current_node
@@ -71,9 +74,9 @@ def selection_phase(root):
     return leaf_node, trajectory, history
 
 
-def expansion_phase(leaf_node, parent, action, dynamic, prediction):
+def expansion_phase(leaf_node, parent, action, dynamic, prediction, debug=False):
     """
-    Expands the tree from the leaf node. Leverages the model.
+    Expands the tree at the leaf node. Leverages the model.
 
     Parameters:
     ----------
@@ -83,16 +86,26 @@ def expansion_phase(leaf_node, parent, action, dynamic, prediction):
     dynamic : The model dynamics function.
     prediction : The model prediction function.
 
-
+    Returns:
+    -------
+    The value of the leaf node - predicted by the model prediction function.
     """
+
+    # Use the model *dynamic*
+    if debug:
+        print("Using the model dynamic ...")
     leaf_node.reward, leaf_node.state_representation = dynamic(
         parent.state_representation, action
     )
 
-    policy, value = prediction(
-        leaf_node.state_representation
-    )  # The policy and value are computed by the *prediction* function at leaf_node
+    # Use the model *prediction*
+    if debug:
+        print("Using the model prediction ...")
+    policy, value = prediction(leaf_node.state_representation)
 
+    # Lazy expansion of the leaf node
+    if debug:
+        print("Expanding the leaf node ...")
     for action in range(len(policy)):
         hypothetical_next_node = Node(policy[action])
         leaf_node.children[action] = hypothetical_next_node
@@ -100,36 +113,42 @@ def expansion_phase(leaf_node, parent, action, dynamic, prediction):
     return value
 
 
-def backup_phase(trajectory, value, gamma=0.99):
+def backup_phase(trajectory, value, gamma=0.99, debug=False):
     """
     Updates the Q values of the edges in the trajectory.
 
     Parameters:
     ----------
     trajectory :List[Node], The trajectory of nodes selected.
-    value : float, The value of the leaf node.
+    value : The value of the leaf node.
+    gamma : The discount factor.
     """
     global minQ, maxQ
 
-    for k, node in enumerate(reversed(trajectory)[:-1]):
-        print("Backup step : ", k)
+    reversed_traj = trajectory[::-1]
+    for k, node in enumerate(reversed_traj[:-1]):
+        if debug:
+            print("Backup step : ", k)
+
+        # Compute iteratively the discounted return G
         if k == 0:
             G = value
         else:
 
             G = node.reward + gamma * G
 
+        # Update the Q value of the edge and its visit count
         node.N += 1
         node.Q = ((node.N * node.Q) + G) / (node.N + 1)
 
+        # Check if the Q value is a new max or min for the tree
         if node.Q > maxQ:
             maxQ = node.Q
         if node.Q < minQ:
             minQ = node.Q
 
-        node.Q = (
-            (node.Q - minQ) / (maxQ - minQ) if maxQ != minQ else node.Q
-        )  # Normalizing the Q values
+        # Normalize the Q values
+        node.Q = (node.Q - minQ) / (maxQ - minQ) if maxQ != minQ else node.Q
 
     return None
 
@@ -155,6 +174,9 @@ def planning(h, dynamic, prediction, o, n_simulation=10, debug=False):
     maxQ = -np.inf
 
     # initializing the tree
+    if debug:
+        print("Initializing the tree ...")
+
     policy, value = prediction(root.state_representation)
 
     for action in range(len(policy)):
@@ -162,24 +184,37 @@ def planning(h, dynamic, prediction, o, n_simulation=10, debug=False):
         root.children[action] = hypothetical_next_node
 
     for sim in range(n_simulation):
-        print("Simulation : ", sim + 1)
-        leaf_node, trajectory, history = selection_phase(root)
-        value = expansion_phase(
-            leaf_node, trajectory[-1], history[-1], dynamic, prediction
-        )
-        backup_phase(trajectory, value)
+        if debug:
+            print("-" * 10 + f"Simulation : {sim+1}" + "-" * 10)
 
-    # compute MCTS policy
+        ########
+        if debug:
+            print("SELECTION phase")
+        leaf_node, trajectory, history = selection_phase(root, debug=debug)
+        ########
+        if debug:
+            print("EXPANSION phase")
+        value = expansion_phase(
+            leaf_node, trajectory[-1], history[-1], dynamic, prediction, debug=debug
+        )
+        ########
+        if debug:
+            print("BACKUP phase")
+        backup_phase(trajectory, value, debug=debug)
+
+    # Compute MCTS policy
+    if debug:
+        print("Computing MCTS policy")
     policy_MCTS = [children.N for children in root.children.values()]
     policy_MCTS = policy_MCTS / np.sum(policy_MCTS)
 
-    # A choisir comme mu value
-    nu = np.sum(
-        [
-            policy_MCTS[i] * children.Q
-            for i, children in enumerate(root.children.values())
-        ]
-    )
-    nu_2 = root.Q
+    # Final state value "nu"
+    nu = root.Q
+    # nu_2 = np.sum(
+    #    [
+    #        policy_MCTS[i] * children.Q
+    #        for i, children in enumerate(root.children.values())
+    #    ]
+    # )
 
     return nu, policy_MCTS
