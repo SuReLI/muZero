@@ -4,7 +4,7 @@ import numpy as np
 
 
 class Node:
-    def __init__(self, P, state_representation=None, reward=None, N=0):
+    def __init__(self, P, state_representation=None, reward=None, N=1):
         """
         Represents a Node in the MCTS tree.
 
@@ -42,10 +42,10 @@ def upper_confidence_bound(
     c2 : an exploration/exploitation tradeoff parameter. Set in the muZero paper to 19652.
 
     """
-
-    return child.Q + child.P * (np.sqrt(parent.N) / (1 + child.N)) * (
+    puct = child.Q + child.P * (np.sqrt(parent.N) / (1 + child.N)) * (
         c1 + np.log((parent.N + c2 + 1) / c2)
     )
+    return puct
 
 
 def select_next_node(node: Node):
@@ -165,7 +165,7 @@ def backup_phase(
     global minQ, maxQ
 
     reversed_traj = trajectory[::-1]
-    for k, node in enumerate(reversed_traj[:-1]):
+    for k, node in enumerate(reversed_traj):
         if debug:
             print("Backup step : ", k)
 
@@ -174,7 +174,9 @@ def backup_phase(
             G = value
         else:
 
-            G = node.reward + gamma * G
+            reward_to_add = reversed_traj[k-1].reward
+            G = reward_to_add + gamma * G
+            
 
         # Update the Q value of the edge and its visit count
         node.N += 1
@@ -248,6 +250,8 @@ def planning(
         if debug:
             print("BACKUP phase")
         backup_phase(trajectory, value, debug=debug)
+
+
 
     # Compute MCTS policy
     if debug:
