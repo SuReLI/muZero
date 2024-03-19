@@ -24,7 +24,6 @@ def acting(env, h, g, f, n_simulation=10):
     
     o_prev = env.initial_state() # previous observation
     
-    mask = env.mask() #
     is_terminal = False
     
     while not is_terminal:
