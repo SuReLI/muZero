@@ -38,6 +38,7 @@ class MuModel(nn.Module):
         g_model: Optional[nn.Module] = None,
         f_model: Optional[nn.Module] = None,
         optimizers: Optional[Optimizers] = None,
+        verbose = False,
     ):
         super().__init__()
 
@@ -50,6 +51,7 @@ class MuModel(nn.Module):
         self.action_dim = action_dim
         self.state_dim = state_dim
         self.criterion = criterion
+        self.verbose = verbose
 
         h_model = h_model if h_model is not None else Representation
         g_model = g_model if g_model is not None else Dynamics
@@ -90,8 +92,8 @@ class MuModel(nn.Module):
         h,
         g,
         f,
-        horizon,
-        verbose=False,
+        horizon
+    
     ):
         """
         Performs one-step gradient descent on the models. Works on batches.
@@ -142,12 +144,13 @@ class MuModel(nn.Module):
         optimizer_f.step()
 
         # Print if needed
-        if verbose:
+        if self.verbose:
             print(f"Training Loss: {loss.item():.4f}")
 
         return loss
 
     def _valid_models_one_step(
+        self,
         observations,
         target_policies,
         target_actions,
@@ -159,7 +162,7 @@ class MuModel(nn.Module):
         g,
         f,
         horizon,
-        verbose=False,
+ 
     ):
         """
         Performs one-step gradient descent on the models. Works on batches.
@@ -196,7 +199,7 @@ class MuModel(nn.Module):
             )
 
         # Print if needed
-        if verbose:
+        if self.verbose:
             print(f"Validation Loss: {loss.item():.4f}")
 
         return loss.item()
@@ -226,7 +229,6 @@ class MuModel(nn.Module):
             g=self.g,
             f=self.f,
             horizon=self.K,
-            verbose=False,
         )
 
         return loss
@@ -254,7 +256,7 @@ class MuModel(nn.Module):
             self.g,
             self.f,
             self.K,
-            verbose=True,
+         
         )
 
         return loss
