@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 
-from replaybuffer import ReplayBuffer, EpisodeStep
+from src.replaybuffer.buffer import ReplayBuffer, EpisodeStep
 
 
 def __generate_random_episode(
