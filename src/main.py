@@ -1,6 +1,9 @@
 import os
 import random
 from typing import List
+from acting.acting import acting
+from training import *
+from GymWrapper import GymWrapper
 
 import gym
 import torch
@@ -11,34 +14,6 @@ from environment import AbstractEnvironment, DummyEnvironment
 from training import MuModel
 from replaybuffer import ReplayBuffer
 
-
-def acting(
-    env: AbstractEnvironment,
-    representation: Module,
-    dynamics: Module,
-    prediction: Module,
-) -> List[tuple[Tensor, Tensor, Tensor, float, float]]:
-    # Let's suppose the cartpole env, which has a 4-dim observation space and a 2-dim action space
-
-    # Random acting
-    action_dim = 2
-    observation_dim = 4
-
-    size_episode = 100
-
-    episode = []
-    for _ in range(size_episode):
-        episode.append(
-            (
-                torch.rand(observation_dim),  # observations
-                torch.rand(action_dim),  # target policies
-                torch.rand(action_dim),  # target actions
-                random.random(),  # target rewards
-                random.random(),  # target returns
-            )
-        )
-
-    return episode
 
 
 def main(
@@ -52,23 +27,23 @@ def main(
     look_back_steps: int = 10,
     save_models_every: int | None = 5,
     save_models_to: str = "models",
+    mcts_budget: int = 10,
     verbose: bool = True,
 ):
     os.makedirs(save_models_to, exist_ok=True)
 
     rb = ReplayBuffer(capacity=replay_buffer_capacity)
-    env = gym.make("CartPole-v1")
+
+    # Wrap the environment
+    env = GymWrapper("CartPole-v1")
 
     # Initialize the MuModel
     mu_model = MuModel(
-        observation_dim=env.observation_space.shape[
-            0
-        ],  # dimension of the observation space (Cart Pole: 4)
+        observation_dim=env.observation_space.shape[0],  # dimension of the observation space (Cart Pole: 4)
         action_dim=env.action_space.n,  # number of possible actions (Cart Pole: 2)
         N=look_back_steps,  # number of past observations used during training (arbitrary)
         K=look_ahead_steps,  # number of future steps used during training (arbitrary)
-        state_dim=look_back_steps
-        * env.observation_space.shape[0],  # dimension of the state space (arbitrary)
+        state_dim=look_back_steps* env.observation_space.shape[0],  # dimension of the state space (arbitrary)
     )
 
     # Initial exploration to fill in the replay buffer
