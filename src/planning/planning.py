@@ -174,9 +174,8 @@ def backup_phase(
             G = value
         else:
 
-            reward_to_add = reversed_traj[k-1].reward
+            reward_to_add = reversed_traj[k - 1].reward
             G = reward_to_add + gamma * G
-            
 
         # Update the Q value of the edge and its visit count
         node.N += 1
@@ -250,8 +249,6 @@ def planning(
         if debug:
             print("BACKUP phase")
         backup_phase(trajectory, value, debug=debug)
-
-
 
     # Compute MCTS policy
     if debug:

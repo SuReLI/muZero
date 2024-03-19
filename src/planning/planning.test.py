@@ -30,18 +30,23 @@ def prediction(state):
     return random_policy, random_value
 
 
-# 10 observations
-observations = [np.random.rand(STATE_SPACE_SIZE) for _ in range(10)]
+def main():
+    # 10 observations
+    observations = [np.random.rand(STATE_SPACE_SIZE) for _ in range(10)]
 
 
-print("Start MCTS planning ...")
-nu, policy_MCTS = planning(
-    h=h,
-    dynamic=dynamic,
-    prediction=prediction,
-    o=observations,
-    n_simulation=N_SIMULATION,
-    debug=PRINT_LOGS,
-)
-print("Done :)")
-print("Policy MCTS : ", policy_MCTS)
+    print("Start MCTS planning ...")
+    nu, policy_MCTS = planning(
+        h=h,
+        dynamic=dynamic,
+        prediction=prediction,
+        o=observations,
+        n_simulation=N_SIMULATION,
+        debug=PRINT_LOGS,
+    )
+    print("Done :)")
+    print("Policy MCTS : ", policy_MCTS)
+
+
+if __name__ == "__main__":
+    main()

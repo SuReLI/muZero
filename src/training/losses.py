@@ -3,7 +3,7 @@ import torch
 from typing import Optional
 
 
-class Loss():
+class Loss:
     """
     Class to compute the aggregated loss over rewards, returns and policies.
 
@@ -13,25 +13,28 @@ class Loss():
     - lp: Optional[nn.Module] = nn.CrossEntropyLoss() : loss for policies
     """
 
-    def __init__(self, 
-                lr: Optional[nn.Module] = nn.MSELoss(),
-                lv: Optional[nn.Module] = nn.MSELoss(), 
-                lp: Optional[nn.Module] = nn.CrossEntropyLoss()):
+    def __init__(
+        self,
+        lr: Optional[nn.Module] = nn.MSELoss(),
+        lv: Optional[nn.Module] = nn.MSELoss(),
+        lp: Optional[nn.Module] = nn.CrossEntropyLoss(),
+    ):
         self.lr = lr
         self.lv = lv
         self.lp = lp
 
     def compute_loss(
-            self, 
-            target_reward, 
-            pred_reward,  
-            target_return, 
-            pred_return, 
-            target_policy, 
-            pred_policy, 
-            target_horizon):
+        self,
+        target_reward,
+        pred_reward,
+        target_return,
+        pred_return,
+        target_policy,
+        pred_policy,
+        target_horizon,
+    ):
         """
-        Compute the loss of the model, given targets and predictions for 
+        Compute the loss of the model, given targets and predictions for
         the next K unrolled steps.
 
         Args:
@@ -43,30 +46,27 @@ class Loss():
         - pred_policy  : tensor of predicted policies [M*K*A] (density)
         - target_horizon : number of unrolled steps for each trajectory [M*1]
         """
-        total_loss = torch.tensor(0,dtype=torch.float32 , requires_grad=True)
+        total_loss = torch.tensor(0, dtype=torch.float32, requires_grad=True)
         M = target_reward.shape[0]
 
         # Compute the loss for each variable
         for m in range(M):
             current_k = target_horizon[m]
             for i in range(current_k):
-                reward_loss = self.lr(pred_reward[m,i], target_reward[m,i])
-                return_loss = self.lv(pred_return[m,i], target_return[m,i])
-                policy_loss = self.lp(pred_policy[m,i], target_policy[m,i])
+                reward_loss = self.lr(pred_reward[m, i], target_reward[m, i])
+                return_loss = self.lv(pred_return[m, i], target_return[m, i])
+                policy_loss = self.lp(pred_policy[m, i], target_policy[m, i])
                 # total_loss = torch.cat([total_loss, reward_loss + return_loss + policy_loss])
-                total_loss = torch.add(total_loss, reward_loss + return_loss + policy_loss)
+                total_loss = torch.add(
+                    total_loss, reward_loss + return_loss + policy_loss
+                )
 
         # total_loss = total_loss.sum()
-        
-        return total_loss
-    
 
-def compute_predictions(
-    observations,
-    target_actions,
-    h, g, f, 
-    horizon
-):
+        return total_loss
+
+
+def compute_predictions(observations, target_actions, h, g, f, horizon):
     """
     Computes the predictions for each network. Works on batches.
 
@@ -84,11 +84,11 @@ def compute_predictions(
     preds_policy = []
 
     # Predictions for the next K unrolled steps
-    prev_state = h(observations) 
+    prev_state = h(observations)
 
     for i in range(horizon):
         # Predict the reward and the next state
-        reward, state = g(prev_state, target_actions[:,i])
+        reward, state = g(prev_state, target_actions[:, i])
 
         # Predict the policy and the value
         policy, value = f(state)
@@ -107,7 +107,7 @@ def compute_predictions(
     preds_policy = torch.stack(preds_policy, dim=1)
 
     # Apply mask over trajectories
-    # k_tensor = torch.tensor(target_horizon)[:, None] 
+    # k_tensor = torch.tensor(target_horizon)[:, None]
     # indices = torch.arange(horizon)[None, :]
     # k_mask = (indices < k_tensor).int()
 
@@ -116,4 +116,3 @@ def compute_predictions(
     # preds_policy = preds_policy * k_mask
 
     return preds_reward, preds_return, preds_policy
-
