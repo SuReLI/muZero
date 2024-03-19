@@ -27,7 +27,7 @@ def acting(env, h, g, f, n_simulation=10):
     is_terminal = False
     
     while not is_terminal:
-        nu_t, pi_t = planning(h, g, f, o_prev, n_simulation=10) # running MCTS algorithm from the current state o_t 
+        nu_t, pi_t = planning(h, g, f, o_prev, n_simulation) # running MCTS algorithm from the current state o_t 
         a = random.choices(range(len(pi_t)), weights = pi_t, k=1)[0] # Choosing the action randomly according to policy pi_t distribution
         r,o_new,is_terminal = env.step(a)
         search_statistics.append((o_prev,pi_t,a,r,nu_t))
