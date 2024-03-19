@@ -7,6 +7,8 @@ import random
 class GymWrapper():
     def __init__(self,env_id): #takes as input the name of the desired environment (for example "CartPole-v1")
         self.env=gym.make(env_id)
+        self.observation_space_size = self.env.observation_space.shape[0]
+        self.number_actions = self.env.action_space.n
 
     def initial_state(self) -> torch.Tensor :
         return self.env.reset()[0] #gym reset() method returns obs, info
