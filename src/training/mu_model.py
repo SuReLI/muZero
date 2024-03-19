@@ -57,16 +57,17 @@ class MuModel(nn.Module):
         g_model = g_model if g_model is not None else Dynamics
         f_model = f_model if f_model is not None else Prediction
 
-        self.g = g_model(state_dim=state_dim, action_dim=action_dim, layer_count=4)
+        self.g = g_model(state_dim=state_dim, action_dim=action_dim, layer_count=4).to(torch.float)
         self.f = f_model(
             state_dim=state_dim, policy_dim=action_dim, value_dim=1, layer_count=4
-        )
+        ).to(torch.float)
         self.h = h_model(
             observation_dim=observation_dim,
             state_dim=state_dim,
             N=self.N,
             layer_count=4,
-        )
+        ).to(torch.float)
+
 
         self.optimizers = (
             optimizers

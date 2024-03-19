@@ -31,7 +31,7 @@ class Dynamics(nn.Module):
         self.output_layer2 = nn.Linear(state_dim + action_dim, 1)
 
     def forward(self, s, a):
-        y = torch.cat([s, a], dim=-1)
+        y = torch.cat([s.to(torch.float), a.to(torch.float)], dim=-1)
         y = torch.relu(self.input_layer(y))
         for layer in self.hidden_layers:
             y = torch.relu(layer(y))
@@ -109,7 +109,7 @@ class Representation(nn.Module):
         self.output_layer = nn.Linear(hidden_dims, output_dim)
 
     def forward(self, o):
-        o = o.view(o.shape[0], -1)
+        o = o.view(o.shape[0],-1)
         x = torch.relu(self.input_layer(o))
         for layer in self.hidden_layers:
             y = torch.relu(layer(x))

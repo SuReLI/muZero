@@ -100,8 +100,12 @@ class ReplayBuffer:
 
             # Parameters
             length = len(observations)
-            state_space_size = observations[0].size()
-            action_space_size = policies[0].size(0)
+            state_space_size = observations[0].shape
+            action_space_size = policies[0].shape[0]
+
+            observations = torch.tensor(observations)
+            policies = torch.tensor(policies)
+            actions = torch.tensor(actions)
 
             # Pad observations at the beginning with zeros
             observations = torch.cat(
@@ -109,11 +113,11 @@ class ReplayBuffer:
                     torch.zeros(
                         (max(0, LOOK_BACK_STEPS - 1 - start_point), *state_space_size)
                     ),
-                    torch.stack(
+                    
                         observations[
                             max(0, start_point - LOOK_BACK_STEPS + 1) : start_point + 1
                         ]
-                    ),
+                    ,
                 ]
             )
             observations_batch.append(observations)
@@ -121,7 +125,7 @@ class ReplayBuffer:
             # Pad policies with zeros at the end
             policies = torch.concat(
                 [
-                    torch.stack(policies[start_point : start_point + LOOK_AHEAD_STEPS + 1]),
+                    policies[start_point : start_point + LOOK_AHEAD_STEPS + 1],
                     torch.zeros(
                         (
                             max(0, LOOK_AHEAD_STEPS + 1 - length + start_point),
@@ -135,7 +139,7 @@ class ReplayBuffer:
             # Pad actions with tensor of zeros at the end
             actions = torch.concat(
                 [
-                    torch.stack(actions[start_point : start_point + LOOK_AHEAD_STEPS + 1]),
+                    actions[start_point : start_point + LOOK_AHEAD_STEPS + 1],
                     torch.zeros(
                         (
                             max(0, LOOK_AHEAD_STEPS + 1 - length + start_point),

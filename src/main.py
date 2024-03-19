@@ -12,10 +12,10 @@ from replaybuffer import ReplayBuffer
 def main(
     initital_exploration: int,
     replay_buffer_capacity: int = 10_000,
-    minibatch_size: int = 64,
+    minibatch_size: int = 5,
     minibatch_nb: int = 1_000,
     exploration_every: int = 5,
-    exploration_size: int = 500,
+    exploration_size: int = 10,
     look_ahead_steps: int = 5,
     look_back_steps: int = 10,
     save_models_every: int | None = 5,
@@ -32,18 +32,17 @@ def main(
 
     # Initialize the MuModel
     mu_model = MuModel(
-        observation_dim=env.observation_space.shape[
-            0
-        ],  # dimension of the observation space (Cart Pole: 4)
-        action_dim=env.action_space.n,  # number of possible actions (Cart Pole: 2)
+        observation_dim=env.observation_space_size,  # dimension of the observation space (Cart Pole: 4)
+        action_dim=env.number_actions,  # number of possible actions (Cart Pole: 2)
         N=look_back_steps,  # number of past observations used during training (arbitrary)
         K=look_ahead_steps,  # number of future steps used during training (arbitrary)
-        state_dim=look_back_steps
-        * env.observation_space.shape[0],  # dimension of the state space (arbitrary)
+        state_dim=look_back_steps* env.observation_space_size,  # dimension of the state space (arbitrary)
     )
 
     # Initial exploration to fill in the replay buffer
-    for _ in range(initital_exploration):
+    for i in range(initital_exploration):
+        if verbose:
+            print(f"Initial exploration {i}")
         episode = acting(env, mu_model.h, mu_model.g, mu_model.f)
         rb.push(episode)
 
@@ -90,4 +89,4 @@ def main(
 
 
 if __name__ == "__main__":
-    main(initital_exploration=1_000, verbose=True)
+    main(initital_exploration=5, verbose=True)

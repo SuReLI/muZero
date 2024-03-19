@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 
 
 class Node:
@@ -91,7 +92,10 @@ def selection_phase(root: Node, debug: bool = False):
         next_node, next_action = select_next_node(current_node)
 
         trajectory.append(next_node)
-        history.append(next_action)
+        one_hot_action = np.zeros(len(current_node.children))
+        one_hot_action[next_action] = 1
+        one_hot_action = torch.tensor(one_hot_action).unsqueeze(0)
+        history.append(one_hot_action)
 
         current_node = next_node
 
@@ -195,7 +199,7 @@ def planning(
     h: callable,
     dynamic: callable,
     prediction: callable,
-    o: list[np.array],
+    o: np.array,
     n_simulation: int = 10,
     debug: bool = False,
 ):
@@ -212,7 +216,9 @@ def planning(
     debug : whether to print logs or not.
     """
     T = 1
-    root = h(o)
+    o_aug = torch.tensor(o)
+    o_aug = o_aug.unsqueeze(0)
+    root = h(o_aug)
     root = Node(1, root)
 
     global minQ, maxQ
@@ -224,6 +230,7 @@ def planning(
         print("Initializing the tree ...")
 
     policy, value = prediction(root.state_representation)
+    
 
     for action in range(len(policy)):
         hypothetical_next_node = Node(policy[action])
@@ -241,7 +248,7 @@ def planning(
         if debug:
             print("EXPANSION phase")
         value = expansion_phase(
-            leaf_node, trajectory[-1], history[-1], dynamic, prediction, debug=debug
+            leaf_node, trajectory[-2], history[-1], dynamic, prediction, debug=debug
         )
         ########
         if debug:
