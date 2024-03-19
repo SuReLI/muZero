@@ -1,6 +1,6 @@
-from typing import List
 from collections import namedtuple
 import random
+from typing import List
 
 import torch
 from torch import Tensor

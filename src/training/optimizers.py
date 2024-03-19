@@ -1,6 +1,7 @@
+from typing import Optional
+
 import torch.nn as nn
 import torch.optim as optim
-from typing import Optional
 
 
 class Optimizers:

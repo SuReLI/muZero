@@ -1,6 +1,7 @@
-import torch.nn as nn
-import torch
 from typing import Optional
+
+import torch
+import torch.nn as nn
 
 from .models import Dynamics, Prediction, Representation
 from .losses import Loss, compute_predictions
@@ -112,16 +113,16 @@ class MuModel(nn.Module):
         - horizon: number of unrolled steps (ideal: K=5)s
         - verbose: print the loss at (each) iteration
         """
-        # Set gradients to zero
 
-        # print(f"Opt types: {type(optimizer_h)}, {type(optimizer_g)}, {type(optimizer_f)}")
+        # Set gradients to zero
         optimizer_h.zero_grad()
         optimizer_g.zero_grad()
         optimizer_f.zero_grad()
 
         # Compute the predictions
-        preds = compute_predictions(observations, target_actions, h, g, f, horizon)
-        pred_rewards, pred_returns, pred_policies = preds
+        pred_rewards, pred_returns, pred_policies = compute_predictions(
+            observations, target_actions, h, g, f, horizon
+        )
 
         # Compute the loss
         loss = criterion.compute_loss(
@@ -177,6 +178,7 @@ class MuModel(nn.Module):
         - horizon: number of unrolled steps (ideal: K=5)
         - verbose: print the loss at (each) iteration
         """
+
         with torch.no_grad():
             # Compute the predictions
             preds = compute_predictions(observations, target_actions, h, g, f, horizon)

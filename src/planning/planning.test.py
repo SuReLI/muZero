@@ -2,6 +2,7 @@ import numpy as np
 
 from planning import planning
 
+
 PRINT_LOGS = False
 N_SIMULATION = 500
 

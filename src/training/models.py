@@ -1,6 +1,7 @@
-import torch.nn as nn
+from typing import Optional
+
 import torch
-from typing import Optional, List
+import torch.nn as nn
 
 
 class Dynamics(nn.Module):

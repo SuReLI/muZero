@@ -1,7 +1,5 @@
 import numpy as np
 
-# from model import dynamics, prediction
-
 
 class Node:
     def __init__(self, P, state_representation=None, reward=None, N=1):
